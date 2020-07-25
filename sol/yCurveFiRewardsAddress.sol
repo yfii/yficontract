@@ -380,7 +380,7 @@ interface IERC20 {
     function transfer(address recipient, uint256 amount)
         external
         returns (bool);
-
+        
     function mint(address account, uint256 amount) external;
 
     /**
@@ -727,7 +727,7 @@ interface IFreeFromUpTo {
         returns (uint256 freed);
 }
 
-contract LPTokenWrapper is DSMath {
+contract LPTokenWrapper is DSMath{
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -771,7 +771,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     // 领取分红 为 每股分红金额*质押数量 - 已经分红金额 getReward
 
     uint256 earnings_per_share; //每股分红
-    uint256 public lastblock; //上次修改每股分红的时间
+    uint256 public lastblock = 10535700; //上次修改每股分红的时间
     uint256 public DailyOutput = 5000 * 1e18;
     uint256 public Halvetime; //减半的时间
 
@@ -791,18 +791,18 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         chi.freeFromUpTo(msg.sender, (gasSpent + 14154) / 41130);
     }
 
-    constructor() public {
+    constructor ()public{
         Halvetime = block.timestamp + DURATION;
     }
 
     //求出每个区块产出多少代币.
     function getPerBlockOutput() public view returns (uint256) {
-        return DailyOutput.div(6646); // 13秒1个区块,每天大概是6646个区块 //https://etherscan.io/chart/blocktime
+        return DailyOutput.div(6646);// 13秒1个区块,每天大概是6646个区块 //https://etherscan.io/chart/blocktime
     }
 
     //上次到现在一共要分的代币是多少
     function getprofit() private returns (uint256) {
-        if (block.timestamp > Halvetime) {
+        if (block.timestamp > Halvetime){
             DailyOutput = DailyOutput.div(2); //减半
             Halvetime = block.timestamp + DURATION;
         }
@@ -838,10 +838,11 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
     function stake(uint256 amount) public make_profit discountCHI {
+        require(block.number >lastblock,"not start");
         require(amount > 0, "Cannot stake 0");
-        if (earnings_per_share == 0) {
+        if (earnings_per_share == 0){
             rewards[msg.sender] = 0;
-        } else {
+        }else{
             rewards[msg.sender] = rewards[msg.sender].add(
                 wmul(earnings_per_share, amount)
             );
@@ -850,12 +851,13 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public make_profit discountCHI {
+    function withdraw(uint256 amount) public make_profit discountCHI
+    {
         require(amount > 0, "Cannot withdraw 0");
         getReward();
 
         rewards[msg.sender] = rewards[msg.sender].sub(
-            wmul(earnings_per_share, amount)
+             wmul(earnings_per_share, amount)
         );
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
