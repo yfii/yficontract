@@ -381,6 +381,8 @@ interface IERC20 {
         external
         returns (bool);
 
+    function mint(address account, uint256 amount) external;
+
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
      * allowed to spend on behalf of `owner` through {transferFrom}. This is
@@ -471,6 +473,7 @@ library Address {
         // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
         // for accounts without code, i.e. `keccak256('')`
         bytes32 codehash;
+
 
             bytes32 accountHash
          = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
@@ -681,6 +684,39 @@ contract IRewardDistributionRecipient is Ownable {
     }
 }
 
+contract DSMath {
+    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        require((z = x + y) >= x);
+    }
+
+    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        require((z = x - y) <= x);
+    }
+
+    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        require(y == 0 || (z = x * y) / y == x);
+    }
+
+    uint256 constant WAD = 10**18;
+    uint256 constant RAY = 10**27;
+
+    function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = add(mul(x, y), WAD / 2) / WAD;
+    }
+
+    function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = add(mul(x, y), RAY / 2) / RAY;
+    }
+
+    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = add(mul(x, WAD), y / 2) / y;
+    }
+
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = add(mul(x, RAY), y / 2) / y;
+    }
+}
+
 // File: contracts/CurveRewards.sol
 
 pragma solidity ^0.5.0;
@@ -691,7 +727,7 @@ interface IFreeFromUpTo {
         returns (uint256 freed);
 }
 
-contract LPTokenWrapper {
+contract LPTokenWrapper is DSMath {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -723,16 +759,23 @@ contract LPTokenWrapper {
 
 contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public yfi = IERC20(0xE4E750275C5E6DEfc3fADc4c9FAE58714234e629);
-    uint256 public constant DURATION = 7 days;
+    uint256 public constant DURATION = 28 days;
 
-    uint256 public periodFinish = 0;
-    uint256 public rewardRate = 0;
-    uint256 public lastUpdateTime;
-    uint256 public rewardPerTokenStored;
-    mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
-    event RewardAdded(uint256 reward);
+    //每股分红算法：
+    //维护一个全局的每股分红金额
+    //每当有新的代币进来分红，新的每股分红金额+= 进来的代币数量/总质押数  make_profit
+    // 每当有人质押的时候 ,他的已经分红金额为  已经分红金额+=每股分红金额*质押数量 stake
+    //每当有人解压的时候 , 他的已经分红金额为  已经分红金额-=每股分红金额*质押数量  withdraw
+    // 领取分红 为 每股分红金额*质押数量 - 已经分红金额 getReward
+
+    uint256 earnings_per_share; //每股分红
+    uint256 public lastblock; //上次修改每股分红的时间
+    uint256 public DailyOutput = 5000 * 1e18;
+    uint256 public Halvetime; //减半的时间
+
+    event DailyOutputChanege(uint256 dailyOutput);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
@@ -748,87 +791,97 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         chi.freeFromUpTo(msg.sender, (gasSpent + 14154) / 41130);
     }
 
-    modifier updateReward(address account) {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
-            rewards[account] = earned(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+    constructor() public {
+        Halvetime = block.timestamp + DURATION;
+    }
+
+    //求出每个区块产出多少代币.
+    function getPerBlockOutput() public view returns (uint256) {
+        return DailyOutput.div(6646); // 13秒1个区块,每天大概是6646个区块 //https://etherscan.io/chart/blocktime
+    }
+
+    //上次到现在一共要分的代币是多少
+    function getprofit() private returns (uint256) {
+        if (block.timestamp > Halvetime) {
+            DailyOutput = DailyOutput.div(2); //减半
+            Halvetime = block.timestamp + DURATION;
+        }
+        uint256 new_blocknum = block.number;
+        if (new_blocknum <= lastblock) {
+            return 0;
+        }
+        uint256 diff = new_blocknum.sub(lastblock);
+        lastblock = new_blocknum;
+        uint256 profit = diff.mul(getPerBlockOutput());
+        return profit;
+    }
+
+    modifier make_profit() {
+        uint256 amount = getprofit();
+        if (amount > 0) {
+            yfi.mint(address(this), amount);
+            earnings_per_share = earnings_per_share.add(
+                wdiv(amount, totalSupply())
+            );
         }
         _;
     }
 
-    function lastTimeRewardApplicable() public view returns (uint256) {
-        return Math.min(block.timestamp, periodFinish);
-    }
-
-    function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
-            return rewardPerTokenStored;
-        }
-        return
-            rewardPerTokenStored.add(
-                lastTimeRewardApplicable()
-                    .sub(lastUpdateTime)
-                    .mul(rewardRate)
-                    .mul(1e18)
-                    .div(totalSupply())
-            );
-    }
-
     function earned(address account) public view returns (uint256) {
-        return
-            balanceOf(account)
-                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
-                .div(1e18)
-                .add(rewards[account]);
+        uint256 _cal = wmul(earnings_per_share, balanceOf(account));
+        if (_cal < rewards[msg.sender]) {
+            return 0;
+        } else {
+            return _cal.sub(rewards[msg.sender]);
+        }
     }
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public updateReward(msg.sender) discountCHI {
+    function stake(uint256 amount) public make_profit discountCHI {
         require(amount > 0, "Cannot stake 0");
+        if (earnings_per_share == 0) {
+            rewards[msg.sender] = 0;
+        } else {
+            rewards[msg.sender] = rewards[msg.sender].add(
+                wmul(earnings_per_share, amount)
+            );
+        }
         super.stake(amount);
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount)
-        public
-        updateReward(msg.sender)
-        discountCHI
-    {
+    function withdraw(uint256 amount) public make_profit discountCHI {
         require(amount > 0, "Cannot withdraw 0");
+        getReward();
+
+        rewards[msg.sender] = rewards[msg.sender].sub(
+            wmul(earnings_per_share, amount)
+        );
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
     }
 
     function exit() external {
         withdraw(balanceOf(msg.sender));
-        getReward();
     }
 
-    function getReward() public updateReward(msg.sender) discountCHI {
+    function getReward() public make_profit discountCHI {
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
-            rewards[msg.sender] = 0;
+            rewards[msg.sender] = wmul(
+                earnings_per_share,
+                balanceOf(msg.sender)
+            );
             yfi.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
+    function newDailyOutput(uint256 _dailyOutput)
         external
         onlyRewardDistribution
-        updateReward(address(0))
     {
-        if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(DURATION);
-        } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = reward.add(leftover).div(DURATION);
-        }
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(DURATION);
-        emit RewardAdded(reward);
+        DailyOutput = _dailyOutput;
+        emit DailyOutputChanege(_dailyOutput);
     }
 }
