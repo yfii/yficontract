@@ -32,7 +32,7 @@ https://etherscan.io/tx/0x14ddc6dc8a577d7b638be435804f33076c2e6f59492d25c50f2826
 
 2. mint (给上面的打币)
 
-数量是 10000000000000000000000个
+数量是 10000000000000000000000 个
 
 https://etherscan.io/tx/0x998ba2dfae41a189df1f3d05df7f3a1a1ba5e368e4c172bedbf28f1dd4bd6b72
 
