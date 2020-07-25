@@ -623,7 +623,7 @@ contract LPTokenWrapper {
 }
 
 contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
-    IERC20 public yfi = IERC20(0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e);
+    IERC20 public yfi = IERC20(0xE4E750275C5E6DEfc3fADc4c9FAE58714234e629);
     uint256 public constant DURATION = 7 days;
 
     uint256 public periodFinish = 0;
