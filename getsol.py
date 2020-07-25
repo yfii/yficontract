@@ -12,7 +12,7 @@ def getsourcecode(contract_address):
 contracts = {
     "yCurveFiRewardsAddress": "0x0001FB050Fe7312791bF6475b96569D83F695C9f",
     "balancerRewardsAddress": "0x033E52f513F9B98e129381c6708F9faA2DEE5db5",
-    "yfiAddress": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+    "yfiAddress": "0xE4E750275C5E6DEfc3fADc4c9FAE58714234e629",
     "claimAddress": "0xcc9EFea3ac5Df6AD6A656235Ef955fBfEF65B862",
     "governanceAddress": "0x3A22dF48d84957F907e67F4313E3D43179040d6E",
     "bpoolAddress": "0x95c4b6c7cff608c0ca048df8b81a484aa377172b",

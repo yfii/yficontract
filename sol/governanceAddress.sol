@@ -61,7 +61,7 @@ library Math {
      */
     function average(uint256 a, uint256 b) internal pure returns (uint256) {
         // (a + b) / 2 can overflow, so we distribute
-        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
+        return (a / 2) + (b / 2) + (((a % 2) + (b % 2)) / 2);
     }
 }
 
@@ -123,7 +123,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
 
@@ -181,7 +185,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
@@ -218,7 +226,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
     }
@@ -241,7 +253,8 @@ pragma solidity ^0.5.0;
 contract Context {
     // Empty internal constructor, to prevent people from mistakenly deploying
     // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
+    constructor() internal {}
+
     // solhint-disable-previous-line no-empty-blocks
 
     function _msgSender() internal view returns (address payable) {
@@ -270,12 +283,15 @@ pragma solidity ^0.5.0;
 contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor () internal {
+    constructor() internal {
         _owner = _msgSender();
         emit OwnershipTransferred(address(0), _owner);
     }
@@ -326,7 +342,10 @@ contract Ownable is Context {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      */
     function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -358,7 +377,9 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -367,7 +388,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -394,7 +418,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -408,7 +436,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 // File: @openzeppelin/contracts/utils/Address.sol
@@ -439,9 +471,13 @@ library Address {
         // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
         // for accounts without code, i.e. `keccak256('')`
         bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+
+            bytes32 accountHash
+         = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
+        assembly {
+            codehash := extcodehash(account)
+        }
         return (codehash != 0x0 && codehash != accountHash);
     }
 
@@ -451,7 +487,11 @@ library Address {
      *
      * _Available since v2.4.0._
      */
-    function toPayable(address account) internal pure returns (address payable) {
+    function toPayable(address account)
+        internal
+        pure
+        returns (address payable)
+    {
         return address(uint160(account));
     }
 
@@ -474,20 +514,23 @@ library Address {
      * _Available since v2.4.0._
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         // solhint-disable-next-line avoid-call-value
         (bool success, ) = recipient.call.value(amount)("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 }
 
 // File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
 
 pragma solidity ^0.5.0;
-
-
-
 
 /**
  * @title SafeERC20
@@ -502,33 +545,83 @@ library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
 
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
+        require(
+            (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(
+            value
+        );
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(
+            value,
+            "SafeERC20: decreased allowance below zero"
+        );
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     /**
@@ -552,9 +645,13 @@ library SafeERC20 {
         (bool success, bytes memory returndata) = address(token).call(data);
         require(success, "SafeERC20: low-level call failed");
 
-        if (returndata.length > 0) { // Return data is optional
+        if (returndata.length > 0) {
+            // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
@@ -563,15 +660,16 @@ library SafeERC20 {
 
 pragma solidity ^0.5.0;
 
-
-
 contract IRewardDistributionRecipient is Ownable {
     address rewardDistribution;
 
     function notifyRewardAmount(uint256 reward) external;
 
     modifier onlyRewardDistribution() {
-        require(_msgSender() == rewardDistribution, "Caller is not reward distribution");
+        require(
+            _msgSender() == rewardDistribution,
+            "Caller is not reward distribution"
+        );
         _;
     }
 
@@ -586,11 +684,6 @@ contract IRewardDistributionRecipient is Ownable {
 // File: contracts/CurveRewards.sol
 
 pragma solidity ^0.5.0;
-
-
-
-
-
 
 contract LPTokenWrapper {
     using SafeMath for uint256;
@@ -623,35 +716,36 @@ contract LPTokenWrapper {
 }
 
 contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
-    
     /* Fee collection for any other token */
-    
-    function seize(IERC20 _token, uint amount) external {
+
+    function seize(IERC20 _token, uint256 amount) external {
         require(msg.sender == governance, "!governance");
         require(_token != feesPaidIn, "feesPaidIn");
         require(_token != yfi, "yfi");
         require(_token != bpt, "bpt");
         _token.safeTransfer(governance, amount);
     }
-    
+
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
-    
+
     bool public breaker = false;
-    
+
     function setBreaker(bool _breaker) external {
         require(msg.sender == governance, "!governance");
         breaker = _breaker;
     }
-    
+
     /* Modifications for fees claimable */
-    
+
     uint256 public yIndex = 0; // previously accumulated index
     uint256 public yBal = 0; // previous calculated balance of COMP
 
     mapping(address => uint256) public ySupplyIndex;
-    
-    IERC20 public feesPaidIn = IERC20(0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8); 
-    
+
+    IERC20 public feesPaidIn = IERC20(
+        0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8
+    );
+
     function setReward(IERC20 _feesPaidIn) public {
         require(msg.sender == governance, "!governance");
         feesPaidIn = _feesPaidIn;
@@ -669,16 +763,16 @@ contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
             ySupplyIndex[recipient] = yIndex;
             uint256 _delta = yIndex.sub(_supplyIndex);
             if (_delta > 0) {
-              uint256 _share = _supplied.mul(_delta).div(1e18);
+                uint256 _share = _supplied.mul(_delta).div(1e18);
 
-              IERC20(feesPaidIn).safeTransfer(recipient, _share);
-              yBal = IERC20(feesPaidIn).balanceOf(address(this));
+                IERC20(feesPaidIn).safeTransfer(recipient, _share);
+                yBal = IERC20(feesPaidIn).balanceOf(address(this));
             }
         } else {
             ySupplyIndex[recipient] = yIndex;
         }
     }
-    
+
     function updateFees() public {
         if (totalSupply() > 0) {
             uint256 _yBal = IERC20(feesPaidIn).balanceOf(address(this));
@@ -687,65 +781,64 @@ contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
                 if (_diff > 0) {
                     uint256 _ratio = _diff.mul(1e18).div(totalSupply());
                     if (_ratio > 0) {
-                      yIndex = yIndex.add(_ratio);
-                      yBal = _yBal;
+                        yIndex = yIndex.add(_ratio);
+                        yBal = _yBal;
                     }
                 }
             }
         }
     }
-    
+
     /* Modifications for proposals */
-    
-    mapping(address => uint) public voteLock; // period that your sake it locked to keep it for voting
-    
+
+    mapping(address => uint256) public voteLock; // period that your sake it locked to keep it for voting
+
     struct Proposal {
-        uint id;
+        uint256 id;
         address proposer;
-        mapping(address => uint) forVotes;
-        mapping(address => uint) againstVotes;
-        uint totalForVotes;
-        uint totalAgainstVotes;
-        uint start; // block start;
-        uint end; // start + period
+        mapping(address => uint256) forVotes;
+        mapping(address => uint256) againstVotes;
+        uint256 totalForVotes;
+        uint256 totalAgainstVotes;
+        uint256 start; // block start;
+        uint256 end; // start + period
     }
-    
-    mapping (uint => Proposal) public proposals;
-    uint public proposalCount;
-    uint public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
-    uint public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
-    uint public minimum = 1e18;
+
+    mapping(uint256 => Proposal) public proposals;
+    uint256 public proposalCount;
+    uint256 public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
+    uint256 public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
+    uint256 public minimum = 1e18;
     bool public config = true;
-    
-    
+
     address public governance;
-    
+
     function setGovernance(address _governance) public {
         require(msg.sender == governance, "!governance");
         governance = _governance;
     }
-    
-    function setMinimum(uint _minimum) public {
+
+    function setMinimum(uint256 _minimum) public {
         require(msg.sender == governance, "!governance");
         minimum = _minimum;
     }
-    
-    function setPeriod(uint _period) public {
+
+    function setPeriod(uint256 _period) public {
         require(msg.sender == governance, "!governance");
         period = _period;
     }
-    
-    function setLock(uint _lock) public {
+
+    function setLock(uint256 _lock) public {
         require(msg.sender == governance, "!governance");
         lock = _lock;
     }
-    
+
     function initialize() public {
         require(config == true, "!config");
         config = false;
         governance = msg.sender;
     }
-    
+
     function propose() public {
         require(balanceOf(msg.sender) > minimum, "<minimum");
         proposals[proposalCount++] = Proposal({
@@ -756,42 +849,48 @@ contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
             start: block.number,
             end: period.add(block.number)
         });
-        
+
         voteLock[msg.sender] = lock.add(block.number);
     }
-    
-    function voteFor(uint id) public {
-        require(proposals[id].start < block.number , "<start");
-        require(proposals[id].end > block.number , ">end");
-        uint votes = balanceOf(msg.sender).sub(proposals[id].forVotes[msg.sender]);
+
+    function voteFor(uint256 id) public {
+        require(proposals[id].start < block.number, "<start");
+        require(proposals[id].end > block.number, ">end");
+        uint256 votes = balanceOf(msg.sender).sub(
+            proposals[id].forVotes[msg.sender]
+        );
         proposals[id].totalForVotes = proposals[id].totalForVotes.add(votes);
         proposals[id].forVotes[msg.sender] = balanceOf(msg.sender);
-        
+
         voteLock[msg.sender] = lock.add(block.number);
-        
+
         if (breaker == false) {
             claimFees();
         }
     }
-    
-    function voteAgainst(uint id) public {
-        require(proposals[id].start < block.number , "<start");
-        require(proposals[id].end > block.number , ">end");
-        uint votes = balanceOf(msg.sender).sub(proposals[id].againstVotes[msg.sender]);
-        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(votes);
+
+    function voteAgainst(uint256 id) public {
+        require(proposals[id].start < block.number, "<start");
+        require(proposals[id].end > block.number, ">end");
+        uint256 votes = balanceOf(msg.sender).sub(
+            proposals[id].againstVotes[msg.sender]
+        );
+        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(
+            votes
+        );
         proposals[id].againstVotes[msg.sender] = balanceOf(msg.sender);
-        
+
         voteLock[msg.sender] = lock.add(block.number);
-        
+
         if (breaker == false) {
             claimFees();
         }
     }
-    
+
     /* Default rewards contract */
-    
-    IERC20 public yfi = IERC20(0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e);
-    
+
+    IERC20 public yfi = IERC20(0xE4E750275C5E6DEfc3fADc4c9FAE58714234e629);
+
     uint256 public constant DURATION = 7 days;
 
     uint256 public periodFinish = 0;
@@ -855,7 +954,7 @@ contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
     function withdraw(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         if (breaker == false) {
-            require(voteLock[msg.sender] < block.number,"!locked");
+            require(voteLock[msg.sender] < block.number, "!locked");
             claimFees();
         }
         super.withdraw(amount);
