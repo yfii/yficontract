@@ -879,7 +879,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         }
     }
 
-    function newDailyOutput(uint256 _dailyOutput)
+    function notifyRewardAmount(uint256 _dailyOutput)
         external
         onlyRewardDistribution
     {
