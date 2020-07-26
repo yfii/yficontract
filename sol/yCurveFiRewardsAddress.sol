@@ -699,7 +699,7 @@ contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public y = IERC20(0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8);
+    IERC20 public y = IERC20(0xF3fb6D4a239981Fe39C351406A7Ab0a82056a7D2);
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -726,7 +726,7 @@ contract LPTokenWrapper {
 }
 
 contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
-    IERC20 public yfi = IERC20(0xE4E750275C5E6DEfc3fADc4c9FAE58714234e629);
+    IERC20 public yfi = IERC20(0xB1Eb306c541D3f89B0D90706d8834BD134Eeb3Cc);
     uint256 public constant DURATION = 28 days;
 
     mapping(address => uint256) public rewards;
@@ -738,9 +738,10 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     //每当有人解压的时候 , 他的已经分红金额为  已经分红金额-=每股分红金额*质押数量  withdraw
     // 领取分红 为 每股分红金额*质押数量 - 已经分红金额 getReward
 
-    uint256 earnings_per_share; //每股分红
-    uint256 public lastblock = 10535700; //上次修改每股分红的时间
-    uint256 public DailyOutput = 5000 * 1e18;
+    uint256 public earnings_per_share; //每股分红
+    uint256 public lastblock; //上次修改每股分红的时间
+    uint256 public starttime = 111; //
+    uint256 public DailyOutput = 357 * 1e18; //10000/28
     uint256 public Halvetime; //减半的时间
 
     event DailyOutputChanege(uint256 dailyOutput);
@@ -749,15 +750,15 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     event RewardPaid(address indexed user, uint256 reward);
 
     //chi
-    IFreeFromUpTo public constant chi = IFreeFromUpTo(
-        0x0000000000004946c0e9F43F4Dee607b0eF1fA1c
-    );
-    modifier discountCHI {
-        uint256 gasStart = gasleft();
-        _;
-        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;
-        chi.freeFromUpTo(msg.sender, (gasSpent + 14154) / 41130);
-    }
+    // IFreeFromUpTo public constant chi = IFreeFromUpTo(
+    //     0x0000000000004946c0e9F43F4Dee607b0eF1fA1c
+    // );
+    // modifier discountCHI {
+    //     uint256 gasStart = gasleft();
+    //     _;
+    //     uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;
+    //     chi.freeFromUpTo(msg.sender, (gasSpent + 14154) / 41130);
+    // }
 
     constructor ()public{
         Halvetime = block.timestamp + DURATION;
@@ -788,9 +789,14 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         uint256 amount = getprofit();
         if (amount > 0) {
             yfi.mint(address(this), amount);
-            earnings_per_share = earnings_per_share.add(
+            if (totalSupply() == 0){
+                earnings_per_share = 0;
+            }else{
+                earnings_per_share = earnings_per_share.add(
                 amount.div(totalSupply())
             );
+            }
+            
         }
         _;
     }
@@ -805,8 +811,8 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     }
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public make_profit discountCHI {
-        require(block.number >lastblock,"not start");
+    function stake(uint256 amount) public make_profit  {
+        require(block.timestamp >starttime,"not start");
         require(amount > 0, "Cannot stake 0");
         if (earnings_per_share == 0){
             rewards[msg.sender] = 0;
@@ -819,7 +825,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public make_profit discountCHI
+    function withdraw(uint256 amount) public make_profit 
     {
         require(amount > 0, "Cannot withdraw 0");
         getReward();
@@ -835,7 +841,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         withdraw(balanceOf(msg.sender));
     }
 
-    function getReward() public make_profit discountCHI {
+    function getReward() public make_profit  {
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
             rewards[msg.sender] = earnings_per_share.mul(balanceOf(msg.sender));
