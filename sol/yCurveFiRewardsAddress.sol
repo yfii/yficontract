@@ -684,38 +684,6 @@ contract IRewardDistributionRecipient is Ownable {
     }
 }
 
-contract DSMath {
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x);
-    }
-
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
-
-    uint256 constant WAD = 10**18;
-    uint256 constant RAY = 10**27;
-
-    function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), WAD / 2) / WAD;
-    }
-
-    function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), RAY / 2) / RAY;
-    }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, WAD), y / 2) / y;
-    }
-
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, RAY), y / 2) / y;
-    }
-}
 
 // File: contracts/CurveRewards.sol
 
@@ -727,7 +695,7 @@ interface IFreeFromUpTo {
         returns (uint256 freed);
 }
 
-contract LPTokenWrapper is DSMath{
+contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -821,14 +789,14 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         if (amount > 0) {
             yfi.mint(address(this), amount);
             earnings_per_share = earnings_per_share.add(
-                wdiv(amount, totalSupply())
+                amount.div(totalSupply())
             );
         }
         _;
     }
 
     function earned(address account) public view returns (uint256) {
-        uint256 _cal = wmul(earnings_per_share, balanceOf(account));
+        uint256 _cal = earnings_per_share.mul(balanceOf(account));
         if (_cal < rewards[msg.sender]) {
             return 0;
         } else {
@@ -844,7 +812,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
             rewards[msg.sender] = 0;
         }else{
             rewards[msg.sender] = rewards[msg.sender].add(
-                wmul(earnings_per_share, amount)
+                earnings_per_share.mul(amount)
             );
         }
         super.stake(amount);
@@ -857,7 +825,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         getReward();
 
         rewards[msg.sender] = rewards[msg.sender].sub(
-             wmul(earnings_per_share, amount)
+            earnings_per_share.mul(amount)
         );
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
@@ -870,10 +838,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     function getReward() public make_profit discountCHI {
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
-            rewards[msg.sender] = wmul(
-                earnings_per_share,
-                balanceOf(msg.sender)
-            );
+            rewards[msg.sender] = earnings_per_share.mul(balanceOf(msg.sender));
             yfi.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
