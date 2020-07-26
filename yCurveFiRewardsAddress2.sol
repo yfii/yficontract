@@ -632,6 +632,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     uint256 public constant DURATION = 7 days;
 
     uint256 public initreward = 10000*1e18;
+    uint256 public starttime = 1595779200; //utc+8 2020 07-27 0:00:00
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
@@ -681,13 +682,13 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     }
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public updateReward(msg.sender) checkhalve{
+    function stake(uint256 amount) public updateReward(msg.sender) checkhalve checkStart{ 
         require(amount > 0, "Cannot stake 0");
         super.stake(amount);
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public updateReward(msg.sender) checkhalve{
+    function withdraw(uint256 amount) public updateReward(msg.sender) checkhalve checkStart{
         require(amount > 0, "Cannot withdraw 0");
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
@@ -698,7 +699,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         getReward();
     }
 
-    function getReward() public updateReward(msg.sender) checkhalve{
+    function getReward() public updateReward(msg.sender) checkhalve checkStart{
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -716,6 +717,10 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
             periodFinish = block.timestamp.add(DURATION);
             emit RewardAdded(initreward);
         }
+        _;
+    }
+    modifier checkStart(){
+        require(block.timestamp > starttime,"not start");
         _;
     }
 
