@@ -732,7 +732,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     mapping(address => uint256) public rewards;
 
     //每股分红算法：
-    //维护一个全局的每股分红金额
+    //维护一个全局的每股分红金额 earnings_per_share
     //每当有新的代币进来分红，新的每股分红金额+= 进来的代币数量/总质押数  make_profit
     // 每当有人质押的时候 ,他的已经分红金额为  已经分红金额+=每股分红金额*质押数量 stake
     //每当有人解压的时候 , 他的已经分红金额为  已经分红金额-=每股分红金额*质押数量  withdraw
