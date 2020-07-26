@@ -190,7 +190,7 @@ library SafeERC20 {
     }
 }
 
-contract YFI is ERC20, ERC20Detailed {
+contract YFII is ERC20, ERC20Detailed {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint;
@@ -199,11 +199,11 @@ contract YFI is ERC20, ERC20Detailed {
   address public governance;
   mapping (address => bool) public minters;
 
-  constructor () public ERC20Detailed("yearn.finance", "YFI", 18) {
-      governance = msg.sender;
+  constructor () public ERC20Detailed("yearn.finance", "YFII", 18) {
+      governance = tx.origin;
   }
 
-  function mint(address account, uint amount) public {
+  function mint(address account, uint256 amount) public {
       require(minters[msg.sender], "!minter");
       _mint(account, amount);
   }
