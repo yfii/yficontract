@@ -692,7 +692,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public updateReward(msg.sender) checkhalve checkStart{
+    function withdraw(uint256 amount) public updateReward(msg.sender) checkStart{
         require(amount > 0, "Cannot withdraw 0");
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
