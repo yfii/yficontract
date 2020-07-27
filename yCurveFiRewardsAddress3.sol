@@ -1,4 +1,8 @@
 /**
+ *Submitted for verification at Etherscan.io on 2020-07-26
+*/
+
+/**
  *Submitted for verification at Etherscan.io on 2020-07-17
 */
 
@@ -363,6 +367,7 @@ interface IERC20 {
      * Emits a {Transfer} event.
      */
     function transfer(address recipient, uint256 amount) external returns (bool);
+    function mint(address account, uint amount) external;
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -627,9 +632,11 @@ contract LPTokenWrapper {
 }
 
 contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
-    IERC20 public yfi = IERC20(0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e);
+    IERC20 public yfi = IERC20(0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83);
     uint256 public constant DURATION = 7 days;
 
+    uint256 public initreward = 10000*1e18;
+    uint256 public starttime = 1595779200; //utc+8 2020 07-27 0:00:00
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
@@ -679,13 +686,13 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
     }
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public updateReward(msg.sender) {
+    function stake(uint256 amount) public updateReward(msg.sender) checkhalve checkStart{ 
         require(amount > 0, "Cannot stake 0");
         super.stake(amount);
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public updateReward(msg.sender) {
+    function withdraw(uint256 amount) public updateReward(msg.sender) checkhalve checkStart{
         require(amount > 0, "Cannot withdraw 0");
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
@@ -696,13 +703,29 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
         getReward();
     }
 
-    function getReward() public updateReward(msg.sender) {
+    function getReward() public updateReward(msg.sender) checkhalve checkStart{
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
             rewards[msg.sender] = 0;
             yfi.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
+    }
+
+    modifier checkhalve(){
+        if (block.timestamp >= periodFinish) {
+            initreward = initreward.mul(50).div(100); 
+            yfi.mint(address(this),initreward);
+
+            rewardRate = initreward.div(DURATION);
+            periodFinish = block.timestamp.add(DURATION);
+            emit RewardAdded(initreward);
+        }
+        _;
+    }
+    modifier checkStart(){
+        require(block.timestamp > starttime,"not start");
+        _;
     }
 
     function notifyRewardAmount(uint256 reward)
@@ -717,6 +740,7 @@ contract YearnRewards is LPTokenWrapper, IRewardDistributionRecipient {
             uint256 leftover = remaining.mul(rewardRate);
             rewardRate = reward.add(leftover).div(DURATION);
         }
+        yfi.mint(address(this),reward);
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(DURATION);
         emit RewardAdded(reward);
