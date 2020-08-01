@@ -600,7 +600,7 @@ contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public vote = IERC20(0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e);
+    IERC20 public vote = IERC20(0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83);
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -711,7 +711,7 @@ contract YearnGovernance is LPTokenWrapper, IRewardDistributionRecipient {
         require(config == true, "!config");
         config = false;
         proposalCount = id;
-        governance = 0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52;
+        governance = 0xc487E91aac75D048EeACA7360E479Ae7cCEa0b86;
     }
     
     event NewProposal(uint id, address creator, uint start, uint duration, address executor);
